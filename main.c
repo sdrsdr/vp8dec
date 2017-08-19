@@ -7,6 +7,11 @@ vpx_codec_iface_t *vp8d;
 vpx_codec_ctx_t ctx;
 vpx_codec_dec_cfg_t cfg;
 
+
+void gotframe (void *user_priv, const vpx_image_t *img){
+	printf("GOT IMG!\n");
+}
+
 int main(int argc, char **argv)
 {	
 	if (argc!=2) {
@@ -28,11 +33,33 @@ int main(int argc, char **argv)
 	fclose(f);
 	vp8d=vpx_codec_vp8_dx();
 	printf("HOLA %s !\n",vpx_codec_iface_name(vp8d));
-	vpx_codec_stream_info_t si; si.w=0; si.h=0;
+	vpx_codec_stream_info_t si; si.sz=sizeof(si); si.w=0; si.h=0;
 	vpx_codec_err_t  err=vpx_codec_peek_stream_info(vp8d,frame,sz,&si);
-	printf("info ok? %u w:%u h:%u\n",(unsigned) err,si.w, si.h);
+	printf("info err=%u w=%u h=%u\n",(unsigned) err,si.w, si.h);
 	
+	vpx_codec_dec_cfg_t cfg; cfg.w=si.w; cfg.h=si.h; cfg.threads=1;
+	err=vpx_codec_dec_init(&ctx,vp8d,&cfg,0);
+	if (err!=VPX_CODEC_OK) {
+		printf("failed to initialize codec context: %s :(\n",vpx_codec_err_to_string(err));
+		return -1;
+	}
+// 	err=vpx_codec_register_put_frame_cb(&ctx,gotframe,NULL);
+// 	if (err!=VPX_CODEC_OK) {
+// 		printf("failed to regster codec frame cb: %s :(\n",vpx_codec_err_to_string(err));
+// 		return -1;
+// 	}
+	err=vpx_codec_decode(&ctx,frame,sz,NULL,0);
+	if (err!=VPX_CODEC_OK) {
+		printf("failed to decode frame: %s :(\n",vpx_codec_err_to_string(err));
+		return -1;
+	}
+	vpx_codec_iter_t it=NULL;
+	vpx_image_t *img= vpx_codec_get_frame(&ctx,&it);
+	while (img){ 
+		printf("Got img to handle!\n");
+		img= vpx_codec_get_frame(&ctx,&it);
+	}
+	vpx_codec_destroy(&ctx);
 	
-	//vpx_codec_dec_init(&ctx,vp8d,);
 	return 0;
 }
