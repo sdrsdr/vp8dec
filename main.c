@@ -56,8 +56,9 @@ int main(int argc, char **argv)
 	vpx_codec_iter_t it=NULL;
 	vpx_image_t *img= vpx_codec_get_frame(&ctx,&it);
 	while (img){ 
-		printf("Got img to handle!\n");
+		printf("Got img to handle fmt:%u bd:%u w:%u/%u/%u h:%u/%u/%u\n",img->fmt,img->bit_depth,img->w,img->d_w,img->r_w,img->h,img->d_h,img->r_h);
 		img= vpx_codec_get_frame(&ctx,&it);
+		
 	}
 	vpx_codec_destroy(&ctx);
 	
